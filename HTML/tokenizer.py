@@ -25,7 +25,7 @@ class HTMLTokenizer:
     
     def run(self, html_text: str) -> list[HTMLToken]:
         
-        print(html_text)
+        html_text = html_text.strip()
         
         tokens: list[HTMLToken] = []
         
