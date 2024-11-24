@@ -662,7 +662,11 @@ class HTMLTokenizer:
                 else:
                     assert 0, "NOT IMPLEMENTED"
             
-            self.i += 1
+            self.i += 1 # consume char
+        
+        # add EOF token
+        self.curr_token = HTMLTokenEOF()
+        self._emit_curr_token()
 
         return self.output_tokens
     
