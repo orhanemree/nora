@@ -18,10 +18,10 @@ class HTMLTokenDoctype(HTMLToken):
     def __init__(self):
         
         self.type = self.Type.DOCTYPE
-        self.name = ""
-        self.public_identifier = ""
-        self.system_identifier = ""
-        self.force_quicks = 0
+        self.name: str = None
+        self.public_identifier: str = None
+        self.system_identifier: str = None
+        self.force_quirks = 0
         
     
     def __repr__(self):
@@ -34,7 +34,7 @@ class HTMLTokenStartTag(HTMLToken):
     def __init__(self):
         
         self.type = self.Type.START_TAG
-        self.tag_name = ""
+        self.tag_name: str = None
         self.self_closing_tag = 0
         self.attributes: list[list[str]] = [] # (name, value)
         
@@ -49,7 +49,7 @@ class HTMLTokenEndTag(HTMLToken):
     def __init__(self):
         
         self.type = self.Type.END_TAG
-        self.tag_name = ""
+        self.tag_name: str = None
         self.self_closing_tag = 0
         self.attributes: list[list[str]] = [] # (name, value)
         
@@ -61,10 +61,10 @@ class HTMLTokenEndTag(HTMLToken):
         
 class HTMLTokenComment(HTMLToken):
     
-    def __init__(self):
+    def __init__(self, data: str = None):
         
         self.type = self.Type.COMMENT
-        self.data = ""
+        self.data = data
         
     
     def __repr__(self):
