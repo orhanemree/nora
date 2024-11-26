@@ -26,7 +26,7 @@ class HTMLTokenDoctype(HTMLToken):
     
     def __repr__(self):
         
-        return f"(DOCTYPE, {self.name}, {self.public_identifier}, {self.system_identifier}, {self.force_quicks})"
+        return f"(DOCTYPE, {self.name}, {self.public_identifier}, {self.system_identifier}, {self.force_quirks})"
         
 
 class HTMLTokenStartTag(HTMLToken):
@@ -36,8 +36,26 @@ class HTMLTokenStartTag(HTMLToken):
         self.type = self.Type.START_TAG
         self.tag_name: str = None
         self.self_closing_tag = 0
-        self.attributes: list[list[str]] = [] # (name, value)
+        self.attributes: list[list[str, str]] = [] # (name, value)
+    
+    
+    def append_attr(self, name: str, value: str):
         
+        self.attributes.append([name, value])
+       
+        
+    def has_attr(self, name: str):
+        
+        return any(a[0] == name for a in self.attributes)
+    
+    
+    def get_attr(self, name: str):
+        
+        if not self.has_attr(name):
+            return
+        
+        return list(filter(lambda a: a[0] == name, self.attributes))[0][1]
+
     
     def __repr__(self):
         
@@ -51,7 +69,25 @@ class HTMLTokenEndTag(HTMLToken):
         self.type = self.Type.END_TAG
         self.tag_name: str = None
         self.self_closing_tag = 0
-        self.attributes: list[list[str]] = [] # (name, value)
+        self.attributes: list[list[str, str]] = [] # (name, value)
+    
+    
+    def append_attr(self, name: str, value: str):
+        
+        self.attributes.append([name, value])
+       
+        
+    def has_attr(self, name: str):
+        
+        return any(a[0] == name for a in self.attributes)
+    
+    
+    def get_attr(self, name: str):
+        
+        if not self.has_attr(name):
+            return
+        
+        return list(filter(lambda a: a[0] == name, self.attributes))[0][1]
         
     
     def __repr__(self):
