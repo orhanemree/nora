@@ -1175,7 +1175,7 @@ class HTMLTokenizer:
                 if c == "-":
                     self._switch_to(self.State.COMMENT_END)
                 
-                if is_eof:
+                elif is_eof:
                     self._parse_error("eof-in-comment")
                     yield self._emit_token() # comment token
                     yield self._emit_token(HTMLTokenEOF())
@@ -1613,7 +1613,7 @@ class HTMLTokenizer:
                     self._switch_to(self.State.DATA)
                     yield self._emit_token() # doctype token
                 
-                if is_eof:
+                elif is_eof:
                     self._parse_error("eof-in-doctype")
                     self.curr_token.force_quirks = 1
                     yield self._emit_token()
