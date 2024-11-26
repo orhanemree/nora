@@ -143,7 +143,7 @@ class HTMLTokenizer:
         print("Parse Error:", code)
         
     
-    def run(self, html_text: str) -> Generator[HTMLToken]:
+    def run(self, html_text: str) -> Generator[HTMLToken, None, None]:
         
         html_text = html_text.strip()
         
@@ -152,9 +152,13 @@ class HTMLTokenizer:
             
             is_eof = (self.i == len(html_text))
             
-            # consume the current input char
-            c = html_text[self.i]
-            self.i += 1
+            c = ""
+            if is_eof:
+                c = "EOF" # will not be used
+            else:
+                # consume the current input char
+                c = html_text[self.i]
+                self.i += 1
             
             if self.state == self.State.DATA:
                 
@@ -1055,16 +1059,16 @@ class HTMLTokenizer:
                     
             elif self.state == self.State.MARKUP_DECLARATION_OPEN:
                 
-                if self.i+1 < len(html_text) and html_text[self.i:self.i+2] == "--":
+                if html_text[self.i-1:self.i+1] == "--":
                     self.curr_token = HTMLTokenComment("")
                     self._switch_to(self.State.COMMENT_START)
                     self.i += 1 # consume also the second "-"
                 
-                elif self.i+6 < len(html_text) and html_text[self.i:self.i+7].upper() == "DOCTYPE":
+                elif self.i+5 < len(html_text) and html_text[self.i-1:self.i+6].upper() == "DOCTYPE":
                     self._switch_to(self.State.DOCTYPE)
                     self.i += 6 # consume also the rest "OCTYPE" 
                 
-                elif self.i+6 < len(html_text) and html_text[self.i:self.i+7] == "[CDATA[":
+                elif self.i+5 < len(html_text) and html_text[self.i-1:self.i+6] == "[CDATA[":
                     assert 0, "NOT IMPLEMENTED"
                     # TODO: see https://html.spec.whatwg.org/multipage/parsing.html#markup-declaration-open-state
                     self.i += 6 # consume also the rest "CDATA[" 
@@ -1309,11 +1313,11 @@ class HTMLTokenizer:
                 
                 else:
                 
-                    if self.i+5 < len(html_text) and html_text[self.i:self.i+6].upper() == "PUBLIC":
+                    if self.i+4 < len(html_text) and html_text[self.i-1:self.i+5].upper() == "PUBLIC":
                         self._switch_to(self.State.AFTER_DOCTYPE_PUBLIC_KEYWORD)
                         self.i += 5 # consume the rest "UBLIC"
                     
-                    elif self.i+5 < len(html_text) and html_text[self.i:self.i+6].upper() == "SYSTEM":
+                    elif self.i+4 < len(html_text) and html_text[self.i-1:self.i+5].upper() == "SYSTEM":
                         self._switch_to(self.State.AFTER_DOCTYPE_SYSTEM_KEYWORD)
                         self.i += 5 # consume the rest "YSTEM"
                     
