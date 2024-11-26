@@ -99,28 +99,10 @@ class HTMLTokenizer:
         self.return_satete: self.State = None
         
         self.temporary_buffer = None
+        self.last_emitted_start_tag_name = ""
         
         # current token (to emit)
         self.curr_token: HTMLToken = None
-        
-        # previous token (to reprocess)
-        self.prev_token = None
-        
-        # sometimes we need to emit more than one tokens
-        # so add the extra tokens into the queue
-        # and if waiting token exists
-        # emit it without processing new char
-        self.waiting_token_queue = []
-        
-        # html text input
-        self.html_text = ""
-        
-        # flags
-        self.started = 0
-        
-        # store last emitted start tag name
-        # to check appropriate end tag token
-        self.last_emitted_start_tag_name = None
         
         # current char index
         self.i = 0
@@ -151,21 +133,15 @@ class HTMLTokenizer:
         if self.curr_token.type == HTMLToken.Type.START_TAG:
             self.last_emitted_start_tag_name = self.curr_token.tag_name
         
-        self.prev_token = self.curr_token
+        temp_tok = self.curr_token
         self.curr_token = None
-        return self.prev_token
+        return temp_tok
     
 
     def _parse_error(self, code: str):
         
         print("Parse Error:", code)
         
-    
-    def start(self, html_text: str):
-        
-        self.html_text = html_text.strip()
-        self.started = 1
-    
     
     def run(self, html_text: str) -> Generator[HTMLToken]:
         
