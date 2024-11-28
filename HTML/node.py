@@ -63,7 +63,7 @@ class HTMLNodeComment(HTMLNode):
     
     def __repr__(self):
         
-        return f"(COMMENT, {self.data})"
+        return f"(COMMENT, '{self.data}')"
         
 
 class HTMLNodeElement(HTMLNode):
@@ -110,4 +110,4 @@ class HTMLNodeText(HTMLNode):
     
     def __repr__(self):
         
-        return f"(TEXT, {self.data})"
+        return f"(TEXT, '{self.data}')"

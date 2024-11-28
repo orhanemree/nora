@@ -115,6 +115,22 @@ class HTMLParser:
         return element_node
         
 
+    def _generic_rcdata_element_parsing(self, token: Union[HTMLTokenStartTag, HTMLTokenEndTag]):
+        
+        self._insert_element_node_with_token(token)
+        self.tokenizer._switch_to(self.tokenizer.State.RCDATA)
+        self.original_insertion_mode = self.insertion_mode
+        self._switch_to(self.InsertionMode.TEXT)
+        
+        
+    def _generic_rawtext_element_parsing(self, token: Union[HTMLTokenStartTag, HTMLTokenEndTag]):
+        
+        self._insert_element_node_with_token(token)
+        self.tokenizer._switch_to(self.tokenizer.State.RAWTEXT)
+        self.original_insertion_mode = self.insertion_mode
+        self._switch_to(self.InsertionMode.TEXT)
+
+
     def _insert_character(self, data: str, parent: HTMLNode = None):
         
         parent_ = parent if parent else self.stack_of_open_elements[-1]
@@ -153,6 +169,7 @@ class HTMLParser:
             self._switch_to(self.InsertionMode.BEFORE_HTML)
             self._reprocess_token()
             
+            
     def _handle_mode_before_html(self, token: HTMLToken):
         
         if token.type == HTMLToken.Type.DOCTYPE:
@@ -182,6 +199,7 @@ class HTMLParser:
             self._insert_element_node("html", self.document)
             self._switch_to(self.InsertionMode.BEFORE_HEAD)
             self._reprocess_token()
+    
     
     def _handle_mode_before_head(self, token: HTMLToken):
     
@@ -218,6 +236,7 @@ class HTMLParser:
             self._switch_to(self.InsertionMode.IN_HEAD)
             self._reprocess_token()
     
+    
     def _handle_mode_in_head(self, token: HTMLToken):
     
         if token.type == HTMLToken.Type.CHARACTER and token.data in self.whitespace:
@@ -240,6 +259,14 @@ class HTMLParser:
                     if not self.stack_of_open_elements[-1].has_attr(attr[0]):
                         self.stack_of_open_elements[-1].append_attr(attr)
         
+        elif token.type == HTMLToken.Type.START_TAG and token.tag_name == "meta":
+            self._insert_element_node_with_token(token)
+            self.stack_of_open_elements.pop()
+            # TODO: something not implemented
+            
+        elif token.type == HTMLToken.Type.START_TAG and token.tag_name == "title":
+            self._generic_rcdata_element_parsing(token)
+        
         elif token.type == HTMLToken.Type.END_TAG:
             
             if token.tag_name == "head":
@@ -261,6 +288,7 @@ class HTMLParser:
             self.stack_of_open_elements.pop()
             self._switch_to(self.InsertionMode.AFTER_HEAD)
             self._reprocess_token()
+            
             
     def _handle_mode_after_head(self, token: HTMLToken):
     
@@ -306,6 +334,7 @@ class HTMLParser:
             self._insert_element_node("body")
             self._switch_to(self.InsertionMode.IN_BODY)
             self._reprocess_token()
+        
         
     def _handle_mode_in_body(self, token: HTMLToken):
         
@@ -364,6 +393,23 @@ class HTMLParser:
         else:
             assert 0, "UNREACHABLE"
             
+            
+    def _handle_mode_text(self, token: HTMLToken):
+        
+        if token.type == HTMLToken.Type.CHARACTER:
+            self._insert_character(token.data)
+
+        elif token.type == HTMLToken.Type.EOF:
+            assert 0, "NOT IMPLEMENTED"
+        
+        elif token.type == HTMLToken.Type.END_TAG and token.tag_name == "script":
+            assert 0, "NOT IMPLEMENTED"
+        
+        else:
+            self.stack_of_open_elements.pop()
+            self._switch_to(self.original_insertion_mode)
+
+            
     def _handle_mode_after_body(self, token: HTMLToken):
         
         if token.type == HTMLToken.Type.CHARACTER and token.data in self.whitespace:
@@ -399,6 +445,7 @@ class HTMLParser:
             self._switch_to(self.InsertionMode.IN_BODY)
             self._reprocess_token()
             
+            
     def _handle_mode_after_after_body(self, token: HTMLToken):
         
         if token.type == HTMLToken.Type.COMMENT:
@@ -429,6 +476,7 @@ class HTMLParser:
             self._parse_error("")
             self._switch_to(self.InsertionMode.IN_BODY)
             self._reprocess_token()
+            
             
     def run(self, html_text: str) -> HTMLNodeDocument:
         
@@ -463,6 +511,9 @@ class HTMLParser:
                 
             elif self.insertion_mode == self.InsertionMode.IN_BODY:
                 self._handle_mode_in_body(token)
+                
+            elif self.insertion_mode == self.InsertionMode.TEXT:
+                self._handle_mode_text(token)
                 
             elif self.insertion_mode == self.InsertionMode.AFTER_BODY:
                 self._handle_mode_after_body(token)

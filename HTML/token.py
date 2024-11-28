@@ -105,7 +105,7 @@ class HTMLTokenComment(HTMLToken):
     
     def __repr__(self):
         
-        return f"(COMMENT, {self.data})"
+        return f"(COMMENT, '{self.data}')"
         
         
 class HTMLTokenCharacter(HTMLToken):
@@ -118,7 +118,7 @@ class HTMLTokenCharacter(HTMLToken):
     
     def __repr__(self):
         
-        return f"(CHARACTER, {self.data})"
+        return f"(CHARACTER, '{self.data}')"
         
         
 class HTMLTokenEOF(HTMLToken):
