@@ -1,4 +1,5 @@
 from enum import Enum, auto
+from typing import Union
 
 
 class HTMLNode:
@@ -18,6 +19,9 @@ class HTMLNode:
         DOCUMENT_FRAGMENT      = auto()
         NOTATION               = auto()
 
+        
+    type: Type
+    
 
 class HTMLNodeDocument(HTMLNode):
     
@@ -27,9 +31,9 @@ class HTMLNodeDocument(HTMLNode):
         self.children: list[HTMLNode] = []
         
         # flags
-        self.parser_cannot_change_the_mode = 0
-        self.is_an_iframe_srcdoc = 0
-        self.quirks_mode = 0
+        self.parser_cannot_change_the_mode: bool = 0
+        self.is_an_iframe_srcdoc: bool = 0
+        self.quirks_mode: bool = 0
     
     
     def __repr__(self):
@@ -40,9 +44,10 @@ class HTMLNodeDocument(HTMLNode):
 
 class HTMLNodeDocumentType(HTMLNode):
     
-    def __init__(self, name: str, public_id: str, system_id: str):
+    def __init__(self, name: Union[str, None], public_id: Union[str, None], system_id: Union[str, None]):
         
         self.type = self.Type.DOCUMENT_TYPE
+        
         self.name = name if name is not None else ""
         self.public_id = public_id if public_id is not None else ""
         self.system_id = system_id if system_id is not None else ""
@@ -58,6 +63,7 @@ class HTMLNodeComment(HTMLNode):
     def __init__(self, data: str):
         
         self.type = self.Type.COMMENT
+        
         self.data = data
         
     
@@ -71,6 +77,7 @@ class HTMLNodeElement(HTMLNode):
     def __init__(self, tag_name: str, attributes: list[dict[str, str]]):
         
         self.type = self.Type.ELEMENT
+        
         self.tag_name = tag_name
         self.attributes = attributes
         self.children: list[HTMLNode] = []
@@ -105,9 +112,13 @@ class HTMLNodeText(HTMLNode):
     def __init__(self, data: str):
 
         self.type = self.Type.TEXT
+        
         self.data = data
         
     
     def __repr__(self):
         
         return f"(TEXT, '{self.data}')"
+
+
+t_HTMLNode = Union[HTMLNodeDocument, HTMLNodeDocumentType, HTMLNodeComment, HTMLNodeElement, HTMLNodeText]
