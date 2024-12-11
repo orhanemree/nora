@@ -4,11 +4,13 @@ HTML parser library from scratch.
 ## Features
 * Implemented all tokens for the tokenizer.
 * Implemented all states in the tokenizer except character references.
-* Implemented essential nodes for the parser. (Document, DocumentType, Comment, Element, Text)
-* Implemented essential insertion modes in the parser. (Initial, BeforeHTML, BeforeHead, InHead, AfterHead, InBody, Text, AfterBody, AfterAfterBody)
+* Implemented essential nodes for the parser. (`Document`, `DocumentType`, `Comment`, `Element`, `Text`)
+* Implemented essential insertion modes in the parser. (`Initial`, `BeforeHtml`, `BeforeHead`, `InHead`, `AfterHead`, `InBody`, `Text`, `AfterBody`, `AfterAfterBody`)
+* Create `html`, `head` and `body` tags even if not exists in the source.
+* Supported special tags: `title`.
 
 ## What I've Learned
-* I have read a whole standard to parse HTML source and many times some parts again and again. It was 40% programming and 60% reading specification which is sometimes hard and boring.
+* I have read a whole standard to parse HTML source and many times some parts again and again. It was 40% programming and 60% reading specification which was sometimes hard and boring.
 
 ## References
 * [HTML Standard](https://html.spec.whatwg.org/multipage/)
