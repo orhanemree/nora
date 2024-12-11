@@ -1,26 +1,36 @@
-from enum import Enum, auto
-from typing import Union
+from enum import Enum as _Enum, auto as _auto
+
+
+__all__ = ["HTMLNode", "HTMLNodeDocument", "HTMLNodeDocumentType", "HTMLNodeComment", "HTMLNodeElement", "HTMLNodeText", "t_HTMLNode"]
 
 
 class HTMLNode:
     
-    class Type(Enum):
+    class Type(_Enum):
         
-        ELEMENT                = auto()
-        ATTRIBUTE              = auto()
-        TEXT                   = auto()
-        CDATA_SECTION          = auto()
-        ENTITY_REFERENCE       = auto()
-        ENTITY                 = auto()
-        PROCESSING_INSTRUCTION = auto()
-        COMMENT                = auto()
-        DOCUMENT               = auto()
-        DOCUMENT_TYPE          = auto()
-        DOCUMENT_FRAGMENT      = auto()
-        NOTATION               = auto()
+        ELEMENT                = _auto()
+        ATTRIBUTE              = _auto()
+        TEXT                   = _auto()
+        CDATA_SECTION          = _auto()
+        ENTITY_REFERENCE       = _auto()
+        ENTITY                 = _auto()
+        PROCESSING_INSTRUCTION = _auto()
+        COMMENT                = _auto()
+        DOCUMENT               = _auto()
+        DOCUMENT_TYPE          = _auto()
+        DOCUMENT_FRAGMENT      = _auto()
+        NOTATION               = _auto()
 
         
     type: Type
+    
+    
+    def __repr__(self):
+        
+        attributes = {key: getattr(self, key) for key in self.__dict__ if not key.startswith('__') and not callable(getattr(self, key))}
+        attr_strings = ", ".join(f"{key}={value!r}" for key, value in attributes.items())
+        
+        return f"HTMLNode({attr_strings})"
     
 
 class HTMLNodeDocument(HTMLNode):
@@ -36,15 +46,9 @@ class HTMLNodeDocument(HTMLNode):
         self.quirks_mode: bool = 0
     
     
-    def __repr__(self):
-        
-        children = "".join(map(lambda c: str(c), self.children))
-        return f"(DOCUMENT, [{children}])"
-
-
 class HTMLNodeDocumentType(HTMLNode):
     
-    def __init__(self, name: Union[str, None], public_id: Union[str, None], system_id: Union[str, None]):
+    def __init__(self, name: None|str, public_id: None|str, system_id: None|str):
         
         self.type = self.Type.DOCUMENT_TYPE
         
@@ -53,11 +57,6 @@ class HTMLNodeDocumentType(HTMLNode):
         self.system_id = system_id if system_id is not None else ""
         
     
-    def __repr__(self):
-        
-        return f"(DOCUMENT_TYPE, {self.name}, {self.public_id}, {self.system_id})"
-        
-
 class HTMLNodeComment(HTMLNode):
     
     def __init__(self, data: str):
@@ -67,11 +66,6 @@ class HTMLNodeComment(HTMLNode):
         self.data = data
         
     
-    def __repr__(self):
-        
-        return f"(COMMENT, '{self.data}')"
-        
-
 class HTMLNodeElement(HTMLNode):
     
     def __init__(self, tag_name: str, attributes: list[dict[str, str]]):
@@ -101,12 +95,6 @@ class HTMLNodeElement(HTMLNode):
         return list(filter(lambda a: a[0] == name, self.attributes))[0][1]
         
     
-    def __repr__(self):
-        
-        children = "".join(map(lambda c: str(c), self.children))
-        return f"(ELEMENT, {self.tag_name}, {self.attributes}, [{children}])"
-        
-
 class HTMLNodeText(HTMLNode):
     
     def __init__(self, data: str):
@@ -116,9 +104,4 @@ class HTMLNodeText(HTMLNode):
         self.data = data
         
     
-    def __repr__(self):
-        
-        return f"(TEXT, '{self.data}')"
-
-
-t_HTMLNode = Union[HTMLNodeDocument, HTMLNodeDocumentType, HTMLNodeComment, HTMLNodeElement, HTMLNodeText]
+t_HTMLNode = HTMLNodeDocument | HTMLNodeDocumentType | HTMLNodeComment | HTMLNodeElement | HTMLNodeText

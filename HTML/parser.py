@@ -1,37 +1,40 @@
-from enum import Enum, auto
-from typing import Union
+from enum import Enum as _Enum, auto as _auto
+
 from .token import *
 from .tokenizer import *
 from .node import *
 
 
+__all__ = ["HTMLParser"]
+
+
 class HTMLParser:
     
-    class InsertionMode(Enum):
+    class InsertionMode(_Enum):
         
-        INITIAL              = auto()
-        BEFORE_HTML          = auto() 
-        BEFORE_HEAD          = auto() 
-        IN_HEAD              = auto() 
-        IN_HEAD_NOSCRIPT     = auto() 
-        AFTER_HEAD           = auto() 
-        IN_BODY              = auto() 
-        TEXT                 = auto() 
-        IN_TABLE             = auto() 
-        IN_TABLE_TEXT        = auto() 
-        IN_CAPTION           = auto() 
-        IN_COLUMN_GROUP      = auto() 
-        IN_TABLE_BODY        = auto() 
-        IN_ROW               = auto() 
-        IN_CELL              = auto() 
-        IN_SELECT            = auto() 
-        IN_SELECT_IN_TABLE   = auto() 
-        IN_TEMPLATE          = auto() 
-        AFTER_BODY           = auto() 
-        IN_FRAMESET          = auto() 
-        AFTER_FRAMESET       = auto() 
-        AFTER_AFTER_BODY     = auto() 
-        AFTER_AFTER_FRAMESET = auto() 
+        INITIAL              = _auto()
+        BEFORE_HTML          = _auto() 
+        BEFORE_HEAD          = _auto() 
+        IN_HEAD              = _auto() 
+        IN_HEAD_NOSCRIPT     = _auto() 
+        AFTER_HEAD           = _auto() 
+        IN_BODY              = _auto() 
+        TEXT                 = _auto() 
+        IN_TABLE             = _auto() 
+        IN_TABLE_TEXT        = _auto() 
+        IN_CAPTION           = _auto() 
+        IN_COLUMN_GROUP      = _auto() 
+        IN_TABLE_BODY        = _auto() 
+        IN_ROW               = _auto() 
+        IN_CELL              = _auto() 
+        IN_SELECT            = _auto() 
+        IN_SELECT_IN_TABLE   = _auto() 
+        IN_TEMPLATE          = _auto() 
+        AFTER_BODY           = _auto() 
+        IN_FRAMESET          = _auto() 
+        AFTER_FRAMESET       = _auto() 
+        AFTER_AFTER_BODY     = _auto() 
+        AFTER_AFTER_FRAMESET = _auto() 
         
 
     whitespace  = "\t\n\f " 
@@ -95,7 +98,7 @@ class HTMLParser:
         return comment_node
 
 
-    def _insert_element_node_with_token(self, token: Union[HTMLTokenStartTag, HTMLTokenEndTag], parent: HTMLNode = None):
+    def _insert_element_node_with_token(self, token: HTMLTokenStartTag|HTMLTokenEndTag, parent: HTMLNode = None):
         
         element_node = HTMLNodeElement(token.tag_name, token.attributes)
         parent_ = parent if parent else self.stack_of_open_elements[-1]
@@ -115,7 +118,7 @@ class HTMLParser:
         return element_node
         
 
-    def _generic_rcdata_element_parsing(self, token: Union[HTMLTokenStartTag, HTMLTokenEndTag]):
+    def _generic_rcdata_element_parsing(self, token: HTMLTokenStartTag|HTMLTokenEndTag):
         
         self._insert_element_node_with_token(token)
         self.tokenizer._switch_to(self.tokenizer.State.RCDATA)
@@ -123,7 +126,7 @@ class HTMLParser:
         self._switch_to(self.InsertionMode.TEXT)
         
         
-    def _generic_rawtext_element_parsing(self, token: Union[HTMLTokenStartTag, HTMLTokenEndTag]):
+    def _generic_rawtext_element_parsing(self, token: HTMLTokenStartTag|HTMLTokenEndTag):
         
         self._insert_element_node_with_token(token)
         self.tokenizer._switch_to(self.tokenizer.State.RAWTEXT)

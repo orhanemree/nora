@@ -1,20 +1,29 @@
-from enum import Enum, auto
-from typing import Union
+from enum import Enum as _Enum, auto as _auto
+
+
+__all__ = ["HTMLToken", "HTMLTokenDoctype", "HTMLTokenStartTag", "HTMLTokenEndTag", "HTMLTokenComment", "HTMLTokenCharacter", "HTMLTokenEOF", "t_HTMLToken"]
 
 
 class HTMLToken:
-    
-    class Type(Enum):
+    class Type(_Enum):
 
-        DOCTYPE   = auto()
-        START_TAG = auto()
-        END_TAG   = auto()
-        COMMENT   = auto()
-        CHARACTER = auto()
-        EOF       = auto()
-    
-    
+        DOCTYPE   = _auto()
+        START_TAG = _auto()
+        END_TAG   = _auto()
+        COMMENT   = _auto()
+        CHARACTER = _auto()
+        EOF       = _auto()
+        
+        
     type: Type
+    
+    
+    def __repr__(self):
+        
+        attributes = {key: getattr(self, key) for key in self.__dict__ if not key.startswith('__') and not callable(getattr(self, key))}
+        attr_strings = ", ".join(f"{key}={value!r}" for key, value in attributes.items())
+        
+        return f"HTMLToken({attr_strings})"
 
 
 class HTMLTokenDoctype(HTMLToken):
@@ -23,15 +32,10 @@ class HTMLTokenDoctype(HTMLToken):
         
         self.type = self.Type.DOCTYPE
         
-        self.name: Union[str, None] = None
-        self.public_identifier: Union[str, None] = None
-        self.system_identifier: Union[str, None] = None
+        self.name: None | str = None
+        self.public_identifier: None | str = None
+        self.system_identifier: None | str = None
         self.force_quirks: bool = 0
-        
-    
-    def __repr__(self):
-        
-        return f"(DOCTYPE, {self.name}, {self.public_identifier}, {self.system_identifier}, {self.force_quirks})"
         
 
 class HTMLTokenStartTag(HTMLToken):
@@ -40,7 +44,7 @@ class HTMLTokenStartTag(HTMLToken):
         
         self.type = self.Type.START_TAG
         
-        self.tag_name: Union[str, None] = None
+        self.tag_name: None | str = None
         self.self_closing_tag: bool = 0
         self.attributes: list[list[str, str]] = [] # (name, value)
     
@@ -62,11 +66,6 @@ class HTMLTokenStartTag(HTMLToken):
         
         return list(filter(lambda a: a[0] == name, self.attributes))[0][1]
 
-    
-    def __repr__(self):
-        
-        return f"(START_TAG, {self.tag_name}, {self.self_closing_tag}, {str(self.attributes)})"
-        
 
 class HTMLTokenEndTag(HTMLToken):
     
@@ -74,7 +73,7 @@ class HTMLTokenEndTag(HTMLToken):
         
         self.type = self.Type.END_TAG
         
-        self.tag_name: Union[str, None] = None
+        self.tag_name: None | str = None
         self.self_closing_tag: bool = 0
         self.attributes: list[list[str, str]] = [] # (name, value)
     
@@ -95,11 +94,6 @@ class HTMLTokenEndTag(HTMLToken):
             return
         
         return list(filter(lambda a: a[0] == name, self.attributes))[0][1]
-        
-    
-    def __repr__(self):
-        
-        return f"(END_TAG, {self.tag_name}, {self.self_closing_tag}, {str(self.attributes)})"
         
         
 class HTMLTokenComment(HTMLToken):
@@ -109,13 +103,8 @@ class HTMLTokenComment(HTMLToken):
         self.type = self.Type.COMMENT
         
         self.data = data
-        
-    
-    def __repr__(self):
-        
-        return f"(COMMENT, '{self.data}')"
-        
-        
+
+
 class HTMLTokenCharacter(HTMLToken):
     
     def __init__(self, char: str):
@@ -124,11 +113,6 @@ class HTMLTokenCharacter(HTMLToken):
         
         self.data = char
         
-    
-    def __repr__(self):
-        
-        return f"(CHARACTER, '{self.data}')"
-        
         
 class HTMLTokenEOF(HTMLToken):
     
@@ -136,10 +120,5 @@ class HTMLTokenEOF(HTMLToken):
         
         self.type = self.Type.EOF
         
-    
-    def __repr__(self):
-        
-        return f"(EOF)"
 
-
-t_HTMLToken = Union[HTMLTokenDoctype, HTMLTokenStartTag, HTMLTokenEndTag, HTMLTokenComment, HTMLTokenCharacter, HTMLTokenEOF]
+t_HTMLToken = HTMLTokenDoctype | HTMLTokenStartTag | HTMLTokenEndTag | HTMLTokenComment | HTMLTokenCharacter | HTMLTokenEOF
