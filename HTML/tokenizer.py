@@ -100,7 +100,7 @@ class HTMLTokenizer:
         
         # states
         self.state = self.State.DATA
-        self.return_satete: self.State = None
+        self.return_state: self.State = None
         
         self.temporary_buffer = None
         self.last_emitted_start_tag_name = ""
