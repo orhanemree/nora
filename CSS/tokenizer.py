@@ -192,7 +192,7 @@ class CSSTokenizer:
     def _consume_string_token(self, ending_code_point: str = None) -> CSSTokenString|CSSTokenBadString:
         
         if ending_code_point is None:
-            ending_code_point = self.css_text[self.i] # current code point
+            ending_code_point = self.css_text[self.i-1] # current code point
         
         token = CSSTokenString("")
         
@@ -294,25 +294,30 @@ class CSSTokenizer:
         return c
     
     
-    def two_code_points_are_valid_escape(self, first: str = None, second: str = None):
+    def two_code_points_are_valid_escape(self, first: str = None, second: str = None, n: int = 0):
+        
+        # NOTE: if n = 0 check current input stream
+        # or if n = 1 check next code point ...
         
         if first is None:
             # get current and next code points
-            first = self._nth_next_code_point(-1)
-            second = self._nth_next_code_point(0)
+            first = self._nth_next_code_point(-1+n)
+            second = self._nth_next_code_point(0+n)
             
         if first != "\\": return False
         if second == "\n": return False
         return True
     
     
-    def three_code_points_would_start_ident_sequence(self, first: str = None, second: str = None, third: str = None):
+    def three_code_points_would_start_ident_sequence(self, first: str = None, second: str = None, third: str = None, n: int = 0) -> bool:
+
+        # NOTE: see note in the function above
 
         if first is None:
             # get current, next and third (second next) code points
-            first = self._nth_next_code_point(-1)
-            second = self._nth_next_code_point(0)
-            third = self._nth_next_code_point(1)
+            first = self._nth_next_code_point(-1+n)
+            second = self._nth_next_code_point(0+n)
+            third = self._nth_next_code_point(1+n)
         
         if first == "-":
             return (self.ident_start_code_point(second) or second == "-" or self.two_code_points_are_valid_escape(second, third))
@@ -325,13 +330,15 @@ class CSSTokenizer:
         return False
     
     
-    def three_code_points_would_start_number(self, first: str = None, second: str = None, third: str = None):
+    def three_code_points_would_start_number(self, first: str = None, second: str = None, third: str = None, n: int = 0) -> bool:
+
+        # NOTE: see note in the function above
 
         if first is None:
             # get current, next and third (second next) code points
-            first = self._nth_next_code_point(-1)
-            second = self._nth_next_code_point(0)
-            third = self._nth_next_code_point(1)
+            first = self._nth_next_code_point(-1+n)
+            second = self._nth_next_code_point(0+n)
+            third = self._nth_next_code_point(1+n)
         
         if first in "+-":
             if second.isdigit(): return True
@@ -348,13 +355,15 @@ class CSSTokenizer:
         return False
             
     
-    def three_code_points_would_start_unicode_range(self, first: str = None, second: str = None, third: str = None):
+    def three_code_points_would_start_unicode_range(self, first: str = None, second: str = None, third: str = None, n: int = 0) -> bool:
+        
+        # NOTE: see note in the function above
 
         if first is None:
             # get current, next and third (second next) code points
-            first = self._nth_next_code_point(-1)
-            second = self._nth_next_code_point(0)
-            third = self._nth_next_code_point(1)
+            first = self._nth_next_code_point(-1+n)
+            second = self._nth_next_code_point(0+n)
+            third = self._nth_next_code_point(1+n)
         
         return (
             first in "Uu" and 
@@ -466,10 +475,10 @@ class CSSTokenizer:
 
     def _emit_token(self, token: CSSToken = None) -> CSSToken:
         
-        if token is not None:
-            return token
-        else:
+        if token is None:
             assert 0, "UNREACHABLE"
+        
+        return token
     
     
     def _parse_error(self):
@@ -488,8 +497,6 @@ class CSSTokenizer:
             
             c = self._consume_next_code_point()
             
-            # print(f"i: {self.i}, c: {c!r}")
-
             if self.whitespace(c):
                 # consume as much whitespace as possible
                 while self.whitespace(self._nth_next_code_point(0)):
@@ -501,11 +508,11 @@ class CSSTokenizer:
                 yield self._emit_token(self._consume_string_token())
             
             elif c == "#":
-                if self.ident_code_point(self._nth_next_code_point(1)) or self.two_code_points_are_valid_escape(1):
+                if self.ident_code_point(self._nth_next_code_point(0)) or self.two_code_points_are_valid_escape(n=1):
                     
                     token = CSSTokenHash()
                     
-                    if self.three_code_points_would_start_ident_sequence(1):
+                    if self.three_code_points_would_start_ident_sequence(n=1):
                         token.type_flag = "id"
                     
                     token.value += self._consume_ident_sequence()
@@ -542,18 +549,17 @@ class CSSTokenizer:
                     self._reconsume()
                     yield self._emit_token(self._consume_numeric_token())
                     
-                else:
-                    if self.i+2 < len(self.css_text) and self.css_text[self.i+1:self.i+2] == "->":
+                elif self._nth_next_code_point(0) == "-" and self._nth_next_code_point(1) == ">":
                         # consume "->"
                         self.i += 2
                         yield self._emit_token(CSSTokenCDC())
                     
-                    elif self.three_code_points_would_start_ident_sequence():
-                        self._reconsume()
-                        yield self._emit(self._consume_ident_like_token())
+                elif self.three_code_points_would_start_ident_sequence():
+                    self._reconsume()
+                    yield self._emit(self._consume_ident_like_token())
 
-                    else:
-                        yield self._emit_token(CSSTokenDelim(c))
+                else:
+                    yield self._emit_token(CSSTokenDelim(c))
             
             elif c == ".":
                 
@@ -572,7 +578,7 @@ class CSSTokenizer:
             
             elif c == "<":
                 
-                if self.i+3 < len(self.css_text) and self.css_text[self.i:self.i+3] == "!--":
+                if self._nth_next_code_point(0) == "!" and self._nth_next_code_point(1) == "-" and self._nth_next_code_point(2) == "-":
                     # consume "!--"
                     self.i += 3
                     yield self._emit_token(CSSTokenCDO())
@@ -582,7 +588,7 @@ class CSSTokenizer:
             
             elif c == "@":
                 
-                if self.three_code_points_would_start_ident_sequence(1):
+                if self.three_code_points_would_start_ident_sequence(n=1):
                     token = CSSTokenAtKeyword()
                     token.value = self._consume_ident_sequence()
                     yield self._emit_token(token)
@@ -618,7 +624,7 @@ class CSSTokenizer:
             
             elif c in "Uu":
                 
-                if self.unicode_ranges_allowed and self.three_code_points_would_start_unicode_range(0):
+                if self.unicode_ranges_allowed and self.three_code_points_would_start_unicode_range():
                     self._reconsume()
                     yield self._emit_token(self._consume_unicode_range_token())
             
