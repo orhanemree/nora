@@ -9,7 +9,7 @@ class CSSTokenizer:
 
     def __init__(self):
         
-        self.unicode_ranges_allowed = False
+        self.unicode_ranges_allowed = True
         
         # css text to tokenize
         self.css_text: None|str = None
@@ -132,11 +132,11 @@ class CSSTokenizer:
         
         number = self._consume_number()
         
-        if self.three_code_points_would_start_ident_sequence():
+        if self.three_code_points_would_start_ident_sequence(n=1):
             
             token = CSSTokenDimension()
             token.value = number[0]
-            token.type_flag = number[1]
+            token.type = number[1]
             token.sign_character = number[2]
             token.unit = ""
             
@@ -149,15 +149,15 @@ class CSSTokenizer:
             self.i += 1
             
             token = CSSTokenPercentage()
-            token.value = number.value
-            token.sign_character = number.sign_character
+            token.value = number[0]
+            token.sign_character = number[2]
             
             return token
         
         token = CSSTokenNumber()
-        token.value = number.value
-        token.type_flag = number.type_flag
-        token.sign_character = number.sign_character
+        token.value = number[0]
+        token.type = number[1]
+        token.sign_character = number[2]
         
         return token
 
@@ -174,7 +174,7 @@ class CSSTokenizer:
                 # consume next
                 self.i += 1
             
-            if self._nth_next_code_point(0) in "\"'" or (self.whitespace(self._nth_next_code_point(0) and self._nth_next_code_point(1) in "\"'")):
+            if self._nth_next_code_point(0) in "\"'" or (self.whitespace(self._nth_next_code_point(0)) and self._nth_next_code_point(1) in "\"'"):
                 
                 return CSSTokenFunction(string)
             
@@ -227,9 +227,8 @@ class CSSTokenizer:
     def _consume_url_token(self) -> CSSTokenUrl|CSSTokenBadUrl:
         
         # TODO: consider the note about the functon in reference
-        
         token = CSSTokenUrl("")
-
+        
         # consume as much whitespace as possible
         while self.whitespace(self._nth_next_code_point(0)):
             self.i += 1
@@ -249,7 +248,7 @@ class CSSTokenizer:
                 while self.whitespace(self._nth_next_code_point(0)):
                     self.i += 1
                 
-                if self._nth_next_code_point(0) in ("(", "EOF"):
+                if self._nth_next_code_point(0) in (")", "EOF"):
                     if self._nth_next_code_point(0) == "EOF": self._parse_error()
                     # consume it
                     self.i += 1
@@ -445,7 +444,7 @@ class CSSTokenizer:
                 
             type_ = "number"
         
-        value = int(number_part)
+        value = float(number_part)
         
         if exponent_part != "":
             value *= pow(10, int(exponent_part))
@@ -510,10 +509,10 @@ class CSSTokenizer:
             elif c == "#":
                 if self.ident_code_point(self._nth_next_code_point(0)) or self.two_code_points_are_valid_escape(n=1):
                     
-                    token = CSSTokenHash()
+                    token = CSSTokenHash("")
                     
                     if self.three_code_points_would_start_ident_sequence(n=1):
-                        token.type_flag = "id"
+                        token.type = "id"
                     
                     token.value += self._consume_ident_sequence()
                     
@@ -556,7 +555,7 @@ class CSSTokenizer:
                     
                 elif self.three_code_points_would_start_ident_sequence():
                     self._reconsume()
-                    yield self._emit(self._consume_ident_like_token())
+                    yield self._emit_token(self._consume_ident_like_token())
 
                 else:
                     yield self._emit_token(CSSTokenDelim(c))
@@ -627,6 +626,9 @@ class CSSTokenizer:
                 if self.unicode_ranges_allowed and self.three_code_points_would_start_unicode_range():
                     self._reconsume()
                     yield self._emit_token(self._consume_unicode_range_token())
+                    
+                self._reconsume()
+                yield self._emit_token(self._consume_ident_like_token())
             
             elif self.ident_start_code_point(c):
                 self._reconsume()
