@@ -112,7 +112,13 @@ def run_test(test_name: str | list[str], out_file: str = None) -> None | list[st
                 tok_expected = tokens[curr_tok]
             
                 # check token type
-                type_exp = tok_expected["type"].replace("-token", "")
+                type_exp = tok_expected["type"].replace("-token", "")\
+                    .replace("[", "left-square")\
+                    .replace("]", "right-square")\
+                    .replace("(", "left-paren")\
+                    .replace(")", "right-paren")\
+                    .replace("{", "left-brace")\
+                    .replace("}", "right-brace")
                 type_out = tok_output.tok_type.name
                 
                 # comment token is ignored int the tokenizer, so ingore it here too
