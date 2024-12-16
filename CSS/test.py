@@ -112,13 +112,20 @@ def run_test(test_name: str | list[str], out_file: str = None) -> None | list[st
                 tok_expected = tokens[curr_tok]
             
                 # check token type
+                type_exp = tok_expected["type"].replace("-token", "")
+                type_out = tok_output.tok_type.name
                 
                 # comment token is ignored int the tokenizer, so ingore it here too
-                if tok_expected["type"] == "comment":
+                if type_exp == "comment":
                     continue
                 
-                if camel2snake(tok_expected["type"]) != tok_output.tok_type.name.lower()+"_token":
-                    print(f"🔴 FAIL: {name}")
+                if type_exp not in ("CDC", "CDO"):
+                    # make json token compatible with this this lib's API
+                    type_exp = type_exp.replace("-token", "").replace("-", "_")
+                    type_out = type_out.lower()
+                
+                if type_exp != type_out:
+                    print(f"🔴 FAIL: {name}, e: token type mismatch")
                     total_fail += 1
                     failed_list.append(name)
                     break
@@ -126,7 +133,7 @@ def run_test(test_name: str | list[str], out_file: str = None) -> None | list[st
                 # check token properties
                 ret = _test_check_properties(tok_expected, tok_output)
                 if ret == 0:
-                    print(f"🔴 FAIL: {name}")
+                    print(f"🔴 FAIL: {name}, e: token property mismatch")
                     total_fail += 1
                     failed_list.append(name)
                     break
