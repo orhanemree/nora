@@ -87,7 +87,7 @@ class CSSTokenizer:
     
     def _consume_next_code_point(self):
         
-        if self.i == len(self.css_text):
+        if self.i >= len(self.css_text):
             self.i += 1 # somehow this line fixes some errors -if it works do not touch it :D
             return "EOF"
         
@@ -283,8 +283,27 @@ class CSSTokenizer:
         c = self._consume_next_code_point()
         
         if self.hex_digit(c):
-            # TODO: consume as many hex digits as possible
-            pass
+            
+            digits = c
+            
+            # consume as many hex digits as possible but no more than 5 (total 6)
+            i = 0
+            while self.hex_digit(self._nth_next_code_point(0)):
+                digit = self._consume_next_code_point()
+                i += 1
+                digits += digit
+                if i == 5:
+                    break
+            
+            if self.whitespace(self._nth_next_code_point(0)):
+                # consume it
+                self.i += 1
+            
+            hex_value = int(digits, 16)
+            if hex_value == 0 or (0xD800 <= hex_value <= 0xDFFF) or hex_value > 0x10FFFF:
+                return u"\ufffd"
+
+            return chr(hex_value)
         
         if c == "EOF":
             self._parse_error()
@@ -512,7 +531,6 @@ class CSSTokenizer:
                     token = CSSTokenHash("")
                     
                     if self.three_code_points_would_start_ident_sequence(n=1):
-                        print("AA", token.type)
                         token.type = "id"
                     
                     token.value += self._consume_ident_sequence()
