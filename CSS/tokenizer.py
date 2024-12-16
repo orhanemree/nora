@@ -321,7 +321,7 @@ class CSSTokenizer:
         if first == "-":
             return (self.ident_start_code_point(second) or second == "-" or self.two_code_points_are_valid_escape(second, third))
         
-        if self.ident_code_point(first): return True
+        if self.ident_start_code_point(first): return True
         
         if first == "\\":
             return self.two_code_points_are_valid_escape(first, second)
@@ -512,6 +512,7 @@ class CSSTokenizer:
                     token = CSSTokenHash("")
                     
                     if self.three_code_points_would_start_ident_sequence(n=1):
+                        print("AA", token.type)
                         token.type = "id"
                     
                     token.value += self._consume_ident_sequence()
