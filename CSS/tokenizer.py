@@ -1,4 +1,5 @@
 from typing import Generator as _Generator, Literal as _Literal
+from decimal import Decimal as _Decimal
 
 from .token import *
 
@@ -463,11 +464,10 @@ class CSSTokenizer:
                 
             type_ = "number"
         
-        value = float(number_part)
-        
+        value = _Decimal(number_part)
         if exponent_part != "":
-            value *= pow(10, int(exponent_part))
-        
+            value *= _Decimal(str(pow(10, int(exponent_part))))
+        value = float(value)
         return (value, type_, sign_character)
             
         
