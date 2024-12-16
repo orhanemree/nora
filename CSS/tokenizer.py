@@ -274,7 +274,8 @@ class CSSTokenizer:
                 
                     return CSSTokenBadUrl()
             
-            token.value += c
+            else:
+                token.value += c
 
     
     def _consume_escaped_code_point(self) -> str:
