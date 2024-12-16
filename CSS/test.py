@@ -112,6 +112,11 @@ def run_test(test_name: str | list[str], out_file: str = None) -> None | list[st
                 tok_expected = tokens[curr_tok]
             
                 # check token type
+                
+                # comment token is ignored int the tokenizer, so ingore it here too
+                if tok_expected["type"] == "comment":
+                    continue
+                
                 if camel2snake(tok_expected["type"]) != tok_output.tok_type.name.lower()+"_token":
                     print(f"🔴 FAIL: {name}")
                     total_fail += 1
