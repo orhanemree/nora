@@ -157,6 +157,7 @@ def run_test(test_name: str | list[str], out_file: str = None) -> None | list[st
                 
             curr_tok += 1
     
+    print("Total tests:", len(test_name))
     print("Total success:", total_success)
     print("Total fail:", total_fail)
     
