@@ -112,6 +112,14 @@ class HTMLTokenizer:
         self.i = 0
         
     
+    def preprocess(self, html_text: str) -> str:
+        
+        # TODO: consider first few lines in https://html.spec.whatwg.org/multipage/parsing.html#preprocessing-the-input-stream
+        
+        # normalize newlines
+        return html_text.replace("\r\n", "\n").replace("\r", "\n")
+        
+    
     def _switch_to(self, state: "HTMLTokenizer.State"):
         
         self.state = state
@@ -149,7 +157,7 @@ class HTMLTokenizer:
     
     def run(self, html_text: str) -> _Generator[HTMLToken, None, None]:
         
-        html_text = html_text.strip()
+        html_text = self.preprocess(html_text.strip())
         
         self.i = 0
         while self.i <= len(html_text):
