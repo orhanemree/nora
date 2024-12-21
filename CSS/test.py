@@ -60,17 +60,51 @@ def list_test_names(out_file: str = None) -> None | list[str]:
     return names
 
 
-def _test_check_properties(tok_expected: dict, tok_output: dict):
+def _test_check_properties(tok_expected: dict, tok_output):
+    
+    # print(tok_expected, tok_output)
     
     for p in tok_expected["structured"] or []:
         val_expected = tok_expected["structured"][p]
         val_output = getattr(tok_output, camel2snake(p))
     
         if val_expected != val_output:
-            return False
+            return p
     
     return True
 
+
+def _test_check_type(tok_expected: dict, tok_output) -> int:
+    
+    """
+    Compares token types.
+    Return -1 if the expected token is a comment token.
+    Return 1 if success.
+    Return 0 if fail.
+    """
+    
+    # comment token is ignored in the tokenizer, so ingore it here too
+    if tok_expected["type"] == "comment-token":
+        return 0
+    
+    type_exp = tok_expected["type"].replace("-token", "")\
+        .replace("[", "left-square")\
+        .replace("]", "right-square")\
+        .replace("(", "left-paren")\
+        .replace(")", "right-paren")\
+        .replace("{", "left-brace")\
+        .replace("}", "right-brace")
+    type_out = tok_output.tok_type.name
+    
+    if type_exp not in ("CDC", "CDO"):
+        # make json token compatible with this this lib's API
+        type_exp = type_exp.replace("-token", "").replace("-", "_")
+        type_out = type_out.lower()
+        
+    if type_exp != type_out: return -1
+    
+    return 1
+    
 
 def run_test(test_name: str | list[str], out_file: str = None) -> None | list[str]:
     
@@ -86,7 +120,7 @@ def run_test(test_name: str | list[str], out_file: str = None) -> None | list[st
         test_name = [test_name]
         
     # initialize tokenizer
-    tokneizer = CSSTokenizer()
+    tokenizer = CSSTokenizer()
         
     source_end = "source.css"
     tokens_end = "tokens.json"
@@ -102,61 +136,45 @@ def run_test(test_name: str | list[str], out_file: str = None) -> None | list[st
         tokens = loads(urlopen(f"{TEST_BASE_URL}/{name}/{tokens_end}").read().decode("utf-8"))
         tokens.append({"type": "eof-token", "structured": None})
         
-        # run css tokenizer
-        out = tokneizer.run(source)
-        curr_tok = 0
-        while 1: 
-            
-            try:
-                tok_output   = next(out)
-                tok_expected = tokens[curr_tok]
-            
-                # check token type
-                type_exp = tok_expected["type"].replace("-token", "")\
-                    .replace("[", "left-square")\
-                    .replace("]", "right-square")\
-                    .replace("(", "left-paren")\
-                    .replace(")", "right-paren")\
-                    .replace("{", "left-brace")\
-                    .replace("}", "right-brace")
-                type_out = tok_output.tok_type.name
-                
-                # comment token is ignored int the tokenizer, so ingore it here too
-                if type_exp == "comment":
-                    continue
-                
-                if type_exp not in ("CDC", "CDO"):
-                    # make json token compatible with this this lib's API
-                    type_exp = type_exp.replace("-token", "").replace("-", "_")
-                    type_out = type_out.lower()
-                
-                if type_exp != type_out:
-                    print(f"🔴 FAIL: {name}, e: token type mismatch")
-                    total_fail += 1
-                    failed_list.append(name)
-                    break
-            
-                # check token properties
-                ret = _test_check_properties(tok_expected, tok_output)
-                if ret == 0:
-                    print(f"🔴 FAIL: {name}, e: token property mismatch")
-                    total_fail += 1
-                    failed_list.append(name)
-                    break
-                
-            except StopIteration:
-                print(f"🟢 SUCCESS: {name}")
-                total_success += 1
-                break
+        # run tokenizer
+        try: 
+            output = tokenizer.run(source)
         
-            except Exception as e:
-                print(f"🔴 FAIL: {name}, e: {e}")
+        except Exception as e:
+            print(f"🔴 FAIL: {name}, e: {e}")
+            total_fail += 1
+            failed_list.append(name)
+            continue
+            
+        comment_count = 0
+        for i in range(len(output)):
+            tok_expected = tokens[i+comment_count]
+            tok_output = output[i]
+        
+            ret = _test_check_type(tok_expected, tok_output)
+            
+            if ret == -1:
+                print("AA")
+                comment_count += 1
+                continue # ignore comment token
+
+            if ret == 0:
+                print(f"🔴 FAIL: {name}, e: token type mismatch")
                 total_fail += 1
                 failed_list.append(name)
                 break
+            
+            # check token properties
+            ret = _test_check_properties(tok_expected, tok_output)
+            if ret == 0:
+                print(f"🔴 FAIL: {name}, e: token property {ret} mismatch")
+                total_fail += 1
+                failed_list.append(name)
+                break
+            
+        print(f"🟢 SUCCESS: {name}")
+        total_success += 1
                 
-            curr_tok += 1
-    
     print("Total tests:", len(test_name))
     print("Total success:", total_success)
     print("Total fail:", total_fail)
