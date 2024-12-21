@@ -31,10 +31,9 @@ class CSSToken:
         RIGHT_PAREN   = _auto()
         LEFT_BRACE    = _auto()
         RIGHT_BRACE   = _auto()
-    
+        EOF           = _auto() # (it is a conceptual token)
     
     type: Type
-    
     
     def __repr__(self):
         
@@ -48,126 +47,118 @@ class CSSTokenIdent(CSSToken):
     
     def __init__(self, value: str = None):
         
-        self.tok_type = self.Type.IDENT
-        
         self.value = value
+        self.tok_type = self.Type.IDENT
 
 
 class CSSTokenFunction(CSSToken):
     
     def __init__(self, value: str = None):
         
-        self.tok_type = self.Type.FUNCTION
-        
         self.value = value
+        self.tok_type = self.Type.FUNCTION
 
 
 class CSSTokenAtKeyword(CSSToken):
     
     def __init__(self):
         
-        self.tok_type = self.Type.AT_KEYWORD
-        
         self.value: None|str = None
+        self.tok_type = self.Type.AT_KEYWORD
 
 
 class CSSTokenHash(CSSToken):
     
     def __init__(self, value: str = None):
         
-        self.tok_type = self.Type.HASH
-        
         self.value = value
         self.type: _Literal["id", "unrestricted"] = "unrestricted"
+        
+        self.tok_type = self.Type.HASH
 
 
 class CSSTokenString(CSSToken):
     
     def __init__(self, value: None|str = None):
         
-        self.tok_type = self.Type.STRING
-        
         self.value = value
+        self.tok_type = self.Type.STRING
 
 
 class CSSTokenBadString(CSSToken):
     
     def __init__(self):
         
-        self.tok_type = self.Type.BAD_STRING
-        
         self.value: None|str = None
+        self.tok_type = self.Type.BAD_STRING
 
 
 class CSSTokenUrl(CSSToken):
     
     def __init__(self, value: str = None):
         
-        self.tok_type = self.Type.URL
-        
         self.value = value
+        self.tok_type = self.Type.URL
 
 
 class CSSTokenBadUrl(CSSToken):
     
     def __init__(self):
         
-        self.tok_type = self.Type.BAD_URL
-        
         self.value: None|str = None
+        self.tok_type = self.Type.BAD_URL
 
 
 class CSSTokenDelim(CSSToken):
     
     def __init__(self, value: None|str = None):
         
-        self.tok_type = self.Type.DELIM
-        
         self.value = value
+        self.tok_type = self.Type.DELIM
 
 
 class CSSTokenNumber(CSSToken):
     
     def __init__(self):
         
-        self.tok_type = self.Type.NUMBER
-        
         self.value: None|int|float = None
         self.type: _Literal["integer", "number"] = "integer"
         self.sign_character: _Literal["+", "-"]|None = None
+        
+        self.tok_type = self.Type.NUMBER
 
 
 class CSSTokenPercentage(CSSToken):
     
     def __init__(self):
-        
-        self.tok_type = self.Type.PERCENTAGE
-        
+                
         self.value: None|int|float = None
         self.sign_character: _Literal["+", "-"]|None = None
+        
+        self.tok_type = self.Type.PERCENTAGE
 
 
 class CSSTokenDimension(CSSToken):
     
     def __init__(self):
-        
-        self.tok_type = self.Type.DIMENSION
-        
+                
         self.value: None|int|float = None
         self.type: _Literal["integer", "number"] = "integer"
         self.sign_character: _Literal["+", "-"]|None = None
         self.unit: None|str = None
+        
+        self.tok_type = self.Type.DIMENSION
 
 
 class CSSTokenUnicodeRange(CSSToken):
     
     def __init__(self):
+                
+        self.starting: None|str = None
+        self.ending: None|str = None
         
         self.tok_type = self.Type.UNICODE_RANGE
         
-        self.starting: None|str = None
-        self.ending: None|str = None
-
 
 class CSSTokenWhitespace(CSSToken):
     
@@ -251,4 +242,11 @@ class CSSTokenRightBrace(CSSToken):
     def __init__(self):
         
         self.tok_type = self.Type.RIGHT_BRACE
+
+
+class CSSTokenEOF(CSSToken):
+    
+    def __init__(self):
+        
+        self.tok_type = self.Type.EOF
         
