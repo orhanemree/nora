@@ -1,4 +1,4 @@
-from typing import Generator as _Generator, Literal as _Literal
+from typing import Literal as _Literal
 from decimal import Decimal as _Decimal
 
 from .token import *
@@ -12,11 +12,14 @@ class CSSTokenizer:
         
         self.unicode_ranges_allowed = True
         
-        # css text to tokenize
-        self.css_text: None|str = None
+        # input to tokenize
+        self.css_text: str = None
         
         # current code point (or char) index in css_text
         self.i = 0
+        
+        # the output
+        self.tokens: list[CSSToken] = []
     
     
     def whitespace(self, c: str): return (len(c) == 1 and c in "\n\t ")
@@ -74,11 +77,6 @@ class CSSTokenizer:
         
         if len(char) > 1: return False
         return self.ident_start_code_point(char) or char.isdigit() or char == "-"
-    
-    
-    def preprocess(self, css_text: str) -> str:
-        
-        return css_text.replace("\r\n", "\n").replace("\r", "\n").replace("\f", "\n").replace("\0", u"\ufffd")
     
     
     def _reconsume(self):
@@ -497,17 +495,24 @@ class CSSTokenizer:
         if token is None:
             assert 0, "UNREACHABLE"
         
-        return token
+        self.tokens.append(token)
     
     
     def _parse_error(self):
         
         print("Parse error.")
+        
+    
+    def preprocess(self, css_text: str) -> str:
+        
+        return css_text.replace("\r\n", "\n").replace("\r", "\n").replace("\f", "\n").replace("\0", u"\ufffd")
     
     
-    def run(self, css_text: str) -> _Generator[CSSToken, None, None]:
+    def run(self, css_text: str) -> list[CSSToken]:
         
         self.css_text = self.preprocess(css_text)
+        
+        self.tokens = []
         
         self.i = 0
         while self.i <= len(self.css_text):
@@ -521,10 +526,10 @@ class CSSTokenizer:
                 while self.whitespace(self._nth_next_code_point(0)):
                     self._consume_next_code_point()
                     
-                yield self._emit_token(CSSTokenWhitespace())
+                self._emit_token(CSSTokenWhitespace())
             
             elif c == "\"":
-                yield self._emit_token(self._consume_string_token())
+                self._emit_token(self._consume_string_token())
             
             elif c == "#":
                 if self.ident_code_point(self._nth_next_code_point(0)) or self.two_code_points_are_valid_escape(n=1):
@@ -536,126 +541,128 @@ class CSSTokenizer:
                     
                     token.value += self._consume_ident_sequence()
                     
-                    yield self._emit_token(token)
+                    self._emit_token(token)
                 
                 else:
-                    yield self._emit_token(CSSTokenDelim(c))
+                    self._emit_token(CSSTokenDelim(c))
             
             elif c == "'":
-                yield self._emit_token(self._consume_string_token())
+                self._emit_token(self._consume_string_token())
                 
             elif c == "(":
-                yield self._emit_token(CSSTokenLeftParen())
+                self._emit_token(CSSTokenLeftParen())
                 
             elif c == ")":
-                yield self._emit_token(CSSTokenRightParen())
+                self._emit_token(CSSTokenRightParen())
             
             elif c == "+":
                 
                 if self.three_code_points_would_start_number():
                     self._reconsume()
-                    yield self._emit_token(self._consume_numeric_token())
+                    self._emit_token(self._consume_numeric_token())
                 
                 else:
-                    yield self._emit_token(CSSTokenDelim(c))
+                    self._emit_token(CSSTokenDelim(c))
                 
             elif c == ",":
-                yield self._emit_token(CSSTokenComma())
+                self._emit_token(CSSTokenComma())
             
             elif c == "-":
                 
                 if self.three_code_points_would_start_number():
                     self._reconsume()
-                    yield self._emit_token(self._consume_numeric_token())
+                    self._emit_token(self._consume_numeric_token())
                     
                 elif self._nth_next_code_point(0) == "-" and self._nth_next_code_point(1) == ">":
                         # consume "->"
                         self.i += 2
-                        yield self._emit_token(CSSTokenCDC())
+                        self._emit_token(CSSTokenCDC())
                     
                 elif self.three_code_points_would_start_ident_sequence():
                     self._reconsume()
-                    yield self._emit_token(self._consume_ident_like_token())
+                    self._emit_token(self._consume_ident_like_token())
 
                 else:
-                    yield self._emit_token(CSSTokenDelim(c))
+                    self._emit_token(CSSTokenDelim(c))
             
             elif c == ".":
                 
                 if self.three_code_points_would_start_number():
                     self._reconsume()
-                    yield self._emit_token(self._consume_numeric_token())
+                    self._emit_token(self._consume_numeric_token())
     
                 else:
-                    yield self._emit_token(CSSTokenDelim(c))
+                    self._emit_token(CSSTokenDelim(c))
                 
             elif c == ":":
-                yield self._emit_token(CSSTokenColon())
+                self._emit_token(CSSTokenColon())
             
             elif c == ";":
-                yield self._emit_token(CSSTokenSemicolon())
+                self._emit_token(CSSTokenSemicolon())
             
             elif c == "<":
                 
                 if self._nth_next_code_point(0) == "!" and self._nth_next_code_point(1) == "-" and self._nth_next_code_point(2) == "-":
                     # consume "!--"
                     self.i += 3
-                    yield self._emit_token(CSSTokenCDO())
+                    self._emit_token(CSSTokenCDO())
                 
                 else:
-                    yield self._emit_token(CSSTokenDelim(c))
+                    self._emit_token(CSSTokenDelim(c))
             
             elif c == "@":
                 
                 if self.three_code_points_would_start_ident_sequence(n=1):
                     token = CSSTokenAtKeyword()
                     token.value = self._consume_ident_sequence()
-                    yield self._emit_token(token)
+                    self._emit_token(token)
                 
                 else:
-                    yield self._emit_token(CSSTokenDelim(c))
+                    self._emit_token(CSSTokenDelim(c))
             
             elif c == "[":
-                yield self._emit_token(CSSTokenLeftSquare())
+                self._emit_token(CSSTokenLeftSquare())
             
             elif c == "\\":
                 
                 if self.two_code_points_are_valid_escape():
                     self._reconsume()
-                    yield self._emit_token(self._consume_ident_like_token())
+                    self._emit_token(self._consume_ident_like_token())
                 
                 else:
                     self._parse_error()
-                    yield self._emit_token(CSSTokenDelim(c))
+                    self._emit_token(CSSTokenDelim(c))
             
             elif c == "]":
-                yield self._emit_token(CSSTokenRightSquare())
+                self._emit_token(CSSTokenRightSquare())
             
             elif c == "{":
-                yield self._emit_token(CSSTokenLeftBrace())
+                self._emit_token(CSSTokenLeftBrace())
             
             elif c == "}":
-                yield self._emit_token(CSSTokenRightBrace())
+                self._emit_token(CSSTokenRightBrace())
             
             elif c.isdigit():
                 self._reconsume()
-                yield self._emit_token(self._consume_numeric_token())
+                self._emit_token(self._consume_numeric_token())
             
             elif c in "Uu":
                 
                 if self.unicode_ranges_allowed and self.three_code_points_would_start_unicode_range():
                     self._reconsume()
-                    yield self._emit_token(self._consume_unicode_range_token())
+                    self._emit_token(self._consume_unicode_range_token())
                     
                 self._reconsume()
-                yield self._emit_token(self._consume_ident_like_token())
+                self._emit_token(self._consume_ident_like_token())
             
             elif self.ident_start_code_point(c):
                 self._reconsume()
-                yield self._emit_token(self._consume_ident_like_token())
+                self._emit_token(self._consume_ident_like_token())
             
             elif c == "EOF":
-                return # yield EOF Token figuratively
+                self._emit_token(CSSTokenEOF())
         
             else:
-                yield self._emit_token(CSSTokenDelim(c))
+                self._emit_token(CSSTokenDelim(c))
+
+        return self.tokens
